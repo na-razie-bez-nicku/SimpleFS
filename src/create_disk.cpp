@@ -4,6 +4,7 @@
 
 int main()
 {
+    std::cout << "Enter : ";
     int fd = open("disk.bin", O_WRONLY | O_CREAT);
     if (fd < 0)
     {
@@ -13,7 +14,7 @@ int main()
 
     int blocks;
 
-    std::cout << "Please enter blocks of disk (1 block = 512 bytes): ";
+    std::cout << "Enter blocks of disk (1 block = 512 bytes): ";
 
     std::cin >> blocks;
 
