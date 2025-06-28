@@ -4,7 +4,7 @@
 
 int main()
 {
-    std::cout << "Enter : ";
+    // std::cout << "Enter : ";
     int fd = open("disk.bin", O_WRONLY | O_CREAT);
     if (fd < 0)
     {
