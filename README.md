@@ -24,8 +24,8 @@ Please note that the file system is not fully functional yet and is intended **f
 
 ## To do list:
 - [x] Implement basic FS header
-- [ ] Create bitmap allocation system
-- [ ] Add root directory
-- [ ] Implement file creation
+- [x] Create bitmap allocation system
+- [x] Add root directory
+- [x] Implement file creation
 - [ ] Support subdirectories
 - [ ] Write/Read file data

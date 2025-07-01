@@ -2,10 +2,13 @@
 #include <unistd.h>
 #include <iostream>
 
-int main()
+int create()
 {
-    // std::cout << "Enter : ";
-    int fd = open("disk.bin", O_WRONLY | O_CREAT);
+    // char *file_name;
+    // std::cout << "Enter file name (without extension): ";
+    // std::cin >> file_name;
+
+    int fd = open("disk.bin", O_WRONLY | O_CREAT, 0644);
     if (fd < 0)
     {
         perror("open");
