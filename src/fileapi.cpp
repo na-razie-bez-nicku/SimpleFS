@@ -1,9 +1,23 @@
 #include "fileapi.hpp"
 
-bool Disk::openDisk(const char *path, uint8_t mode)
+Disk::Disk(const char* path) {
+    this->path = path;
+}
+
+bool Disk::openDisk(uint8_t mode)
 {
 #ifdef _WIN32
-    handle = CreateFile()
+    switch (mode) {
+	case OPMD_RDONLY:
+		handle = CreateFile(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		break;
+	case OPMD_WRONLY:
+		handle = CreateFile(path, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        break;
+	case OPMD_RDWR:
+		handle = CreateFile(path, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        break;
+    }
 #else
     switch (mode)
     {
@@ -24,7 +38,13 @@ bool Disk::openDisk(const char *path, uint8_t mode)
 ssize_t Disk::readDisk(void *buffer, size_t size)
 {
 #ifdef _WIN32
-
+    DWORD bytesRead;
+    BOOL success = ReadFile(hFile, buffer, size, &bytesRead, NULL);
+	if (success) {
+		return bytesRead; // Return number of bytes read
+	}
+    else
+        return -1; // Error reading file
 #else
     return read(fd, buffer, size);
 #endif
@@ -33,7 +53,13 @@ ssize_t Disk::readDisk(void *buffer, size_t size)
 ssize_t Disk::writeDisk(const void *buffer, size_t size)
 {
 #ifdef _WIN32
-
+    DWORD bytesWritten;
+    BOOL success = WriteFile(hFile, buffer, size, &bytesWritten, NULL);
+    if (success) {
+        return bytesRead; // Return number of bytes read
+    }
+    else
+        return -1; // Error reading file
 #else
     return write(fd, buffer, size);
 #endif
@@ -42,7 +68,20 @@ ssize_t Disk::writeDisk(const void *buffer, size_t size)
 void Disk::seekDisk(uint64_t offset, uint8_t from)
 {
 #ifdef _WIN32
-
+    LARGE_INTEGER li;
+    li.QuadPart = offset;  // offset
+    switch (from)
+    {
+    case UNISEEK_BEG:
+        SetFilePointerEx(hFile, li, NULL, FILE_BEGIN);
+        break;
+    case UNISEEK_CUR:
+        SetFilePointerEx(hFile, li, NULL, FILE_CURRENT);
+        break;
+    case UNISEEK_END:
+        SetFilePointerEx(hFile, li, NULL, FILE_END);
+        break;
+    }
 #else
     switch (from)
     {
@@ -62,7 +101,7 @@ void Disk::seekDisk(uint64_t offset, uint8_t from)
 void Disk::closeDisk()
 {
 #ifdef _WIN32
-
+    CloseHandle(hFile);
 #else
     close(fd);
 #endif
