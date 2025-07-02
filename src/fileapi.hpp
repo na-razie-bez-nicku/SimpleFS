@@ -22,10 +22,10 @@ public:
   ~Disk();
 
   bool openDisk(const char* path, uint8_t mode);
-  ssize_t read(void* buffer, size_t size);
-  ssize_t write(const void* buffer, size_t size);
-  void seek(uint64_t offset, uint8_t from); // 0 - begin; 1 - current; 2 - end (reverse)
-  void close();
+  ssize_t readDisk(void* buffer, size_t size);
+  ssize_t writeDisk(const void* buffer, size_t size);
+  void seekDisk(uint64_t offset, uint8_t from); // 0 - begin; 1 - current; 2 - end (reverse)
+  void closeDisk();
 
 private:
 #ifdef _WIN32
