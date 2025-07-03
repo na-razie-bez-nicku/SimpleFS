@@ -1,34 +1,27 @@
+#ifndef IO
+#define IO
+
 #include <iostream>
-#include <unistd.h>
-#include <fcntl.h>
 #include <cstring>
 #include <cstdint>
 #include <vector>
 #include "dir_entry.cpp"
 #include "fs_header.cpp"
 #include "methods.cpp"
+#include "disk.hpp"
 
-int printHeader(const char *path)
+int printHeader(Disk *diskPtr)
 {
+    Disk disk = *diskPtr;
     const int SECTOR_SIZE = 512;
-    uint8_t buffer[SECTOR_SIZE];
+    char buffer[SECTOR_SIZE];
 
-    int fd = open(path, O_RDONLY);
-    if (fd < 0)
-    {
-        perror("open");
-        return 1;
-    }
-
-    ssize_t bytesRead = read(fd, buffer, SECTOR_SIZE);
+    size_t bytesRead = disk.readDisk(buffer, SECTOR_SIZE);
     if (bytesRead != SECTOR_SIZE)
     {
-        perror("read");
-        close(fd);
+		disk.closeDisk();
         return 1;
     }
-
-    close(fd);
 
     // Przekształć bajty do struktury
     FSHeader header;
@@ -55,27 +48,18 @@ int printHeader(const char *path)
     return 0;
 }
 
-void readHeader(const char *path, FSHeader &header)
+void readHeader(Disk *diskPtr, FSHeader &header)
 {
+    Disk disk = *diskPtr;
     const int SECTOR_SIZE = 512;
-    uint8_t buffer[SECTOR_SIZE];
+    char buffer[SECTOR_SIZE];
 
-    int fd = open(path, O_RDONLY);
-    if (fd < 0)
-    {
-        perror("open");
-        return;
-    }
-
-    ssize_t bytesRead = read(fd, buffer, SECTOR_SIZE);
+    size_t bytesRead = disk.readDisk(buffer, SECTOR_SIZE);
     if (bytesRead != SECTOR_SIZE)
     {
-        perror("read");
-        close(fd);
+        disk.closeDisk();
         return;
     }
-
-    close(fd);
 
     // Przekształć bajty do struktury=
     std::memcpy(&header, buffer, sizeof(FSHeader));
@@ -88,52 +72,19 @@ void readHeader(const char *path, FSHeader &header)
     }
 }
 
-void readHeader(int fd, FSHeader &header)
+uint8_t *readBitmap(Disk *diskPtr)
 {
-    const int SECTOR_SIZE = 512;
-    uint8_t buffer[SECTOR_SIZE];
-
-    if (fd < 0)
-    {
-        perror("open");
-        return;
-    }
-
-    ssize_t bytesRead = read(fd, buffer, SECTOR_SIZE);
-    if (bytesRead != SECTOR_SIZE)
-    {
-        perror("read");
-        close(fd);
-        return;
-    }
-
-    close(fd);
-
-    // Przekształć bajty do struktury=
-    std::memcpy(&header, buffer, sizeof(FSHeader));
-
-    // Sprawdź magic string
-    if (std::memcmp(header.magic, "SIMPLEFS", 8) != 0)
-    {
-        std::cerr << "Invalid file system (magic mismatch)" << std::endl;
-        return;
-    }
-}
-
-uint8_t *readBitmap(const char *path)
-{
+    Disk disk = *diskPtr;
     FSHeader header = {};
-    int fd = open(path, O_RDONLY);
-    read(fd, &header, sizeof(header));
+
+    disk.readDisk(&header, sizeof(header));
 
     uint32_t bitmapSizeBytes = (header.blockCount + 7) / 8;
 
     uint8_t *bitmap = new uint8_t[bitmapSizeBytes];
 
-    lseek(fd, header.bitmapOffset, SEEK_SET);
-    read(fd, bitmap, bitmapSizeBytes);
-
-    close(fd);
+    disk.seekDisk(header.bitmapOffset, UNISEEK_BEG);
+    disk.readDisk(bitmap, bitmapSizeBytes);
 
     return bitmap;
 }
@@ -154,55 +105,32 @@ void setBlockUsed(uint8_t *bitmap, uint32_t blockIndex, bool used)
         bitmap[byteIndex] &= ~bitMask; // wyczyść bit
 }
 
-bool saveBitmapToDisk(const char *path, uint8_t *bitmap, uint32_t bitmapSizeBytes, uint32_t bitmapOffset)
+bool saveBitmapToDisk(Disk *diskPtr, uint8_t *bitmap, uint32_t bitmapSizeBytes, uint32_t bitmapOffset)
 {
-    int fd = open(path, O_WRONLY);
-    if (fd < 0)
+    Disk disk = *diskPtr;
+
+    disk.seekDisk(bitmapOffset, UNISEEK_BEG);
+
+    size_t written = disk.writeDisk(bitmap, bitmapSizeBytes);
+    if (written != (size_t)bitmapSizeBytes)
     {
-        perror("open");
+		disk.closeDisk();
         return false;
     }
 
-    if (lseek(fd, bitmapOffset, SEEK_SET) == -1)
-    {
-        perror("lseek");
-        close(fd);
-        return false;
-    }
-
-    ssize_t written = write(fd, bitmap, bitmapSizeBytes);
-    if (written != (ssize_t)bitmapSizeBytes)
-    {
-        perror("write");
-        close(fd);
-        return false;
-    }
-
-    close(fd);
     return true;
 }
 
-bool readRootDir(const char *diskPath, uint32_t rootDirOffset, uint32_t rootDirSizeBytes, std::vector<DirEntry> &entries)
+bool readRootDir(Disk *diskPtr, uint32_t rootDirOffset, uint32_t rootDirSizeBytes, std::vector<DirEntry>& entries)
 {
-    int fd = open(diskPath, O_RDONLY);
-    if (fd < 0)
-    {
-        perror("open");
-        return false;
-    }
+    Disk disk = *diskPtr;
 
-    if (lseek(fd, rootDirOffset, SEEK_SET) == -1)
-    {
-        perror("lseek");
-        close(fd);
-        return false;
-    }
+    disk.seekDisk(rootDirOffset, UNISEEK_BEG);
 
     std::vector<uint8_t> buffer(rootDirSizeBytes);
-    ssize_t bytesRead = read(fd, buffer.data(), rootDirSizeBytes);
-    close(fd);
+    size_t bytesRead = disk.readDisk(buffer.data(), rootDirSizeBytes);
 
-    if (bytesRead != (ssize_t)rootDirSizeBytes)
+    if (bytesRead != (size_t)rootDirSizeBytes)
     {
         std::cerr << "Failed to read full root directory\n";
         return false;
@@ -216,26 +144,15 @@ bool readRootDir(const char *diskPath, uint32_t rootDirOffset, uint32_t rootDirS
     return true;
 }
 
-bool writeRootDir(const char *diskPath, uint32_t rootDirOffset, const std::vector<DirEntry> &entries)
+bool writeRootDir(Disk *diskPtr, uint32_t rootDirOffset, const std::vector<DirEntry> &entries)
 {
-    int fd = open(diskPath, O_WRONLY);
-    if (fd < 0)
-    {
-        perror("open");
-        return false;
-    }
+    Disk disk = *diskPtr;
 
-    if (lseek(fd, rootDirOffset, SEEK_SET) == -1)
-    {
-        perror("lseek");
-        close(fd);
-        return false;
-    }
+    disk.seekDisk(rootDirOffset, UNISEEK_BEG);
 
-    ssize_t bytesWritten = write(fd, entries.data(), entries.size() * sizeof(DirEntry));
-    close(fd);
+    size_t bytesWritten = disk.writeDisk(entries.data(), entries.size() * sizeof(DirEntry));
 
-    if (bytesWritten != (ssize_t)(entries.size() * sizeof(DirEntry)))
+    if (bytesWritten != (size_t)(entries.size() * sizeof(DirEntry)))
     {
         std::cerr << "Failed to write full root directory\n";
         return false;
@@ -244,20 +161,19 @@ bool writeRootDir(const char *diskPath, uint32_t rootDirOffset, const std::vecto
     return true;
 }
 
-void createFile(const char *diskPath, const char *filePath, const char *content)
+void createFile(Disk *diskPtr, const char *filePath, const char *content)
 {
-    FSHeader header;
-    readHeader(diskPath, header);
+    Disk disk = *diskPtr;
 
-    int fd = open(diskPath, O_RDWR);
+    FSHeader header;
+    readHeader(&disk, header);
 
     bool created = false;
 
     for (size_t i = 0; i < 256; i++)
     {
-
         DirEntry entry;
-        if (!readDirEntry(fd, header.rootDirOffset + i * sizeof(DirEntry), entry))
+        if (!readDirEntry(disk, header.rootDirOffset + i * sizeof(DirEntry), entry))
         {
             std::cerr << "Magic is not correct" << std::endl;
             return;
@@ -270,9 +186,9 @@ void createFile(const char *diskPath, const char *filePath, const char *content)
             continue;
         }
 
-        lseek(fd, entry.startBlock * 512, SEEK_SET);
+        disk.seekDisk(entry.startBlock * 512, UNISEEK_BEG);
 
-        write(fd, content, entry.sizeBytes);
+        disk.writeDisk(content, entry.sizeBytes);
         created = true;
 
         std::cout << "File created." << std::endl;
@@ -297,6 +213,6 @@ void createFile(const char *diskPath, const char *filePath, const char *content)
     // uint8_t *buffer;
     // read(fd, buffer, 96);
     // if()
-
-    close(fd);
 }
+
+#endif

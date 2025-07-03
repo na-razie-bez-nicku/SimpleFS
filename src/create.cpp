@@ -1,19 +1,14 @@
-#include <fcntl.h>
-#include <unistd.h>
+#ifndef CREATE
+#define CREATE
+
+#include "disk.hpp"
 #include <iostream>
 
-int create()
+void create(Disk *diskPtr)
 {
     // char *file_name;
     // std::cout << "Enter file name (without extension): ";
     // std::cin >> file_name;
-
-    int fd = open("disk.bin", O_WRONLY | O_CREAT, 0644);
-    if (fd < 0)
-    {
-        perror("open");
-        return 1;
-    }
 
     int blocks;
 
@@ -21,13 +16,18 @@ int create()
 
     std::cin >> blocks;
 
+    Disk disk = *diskPtr;
+
+	disk.openDisk(OPMD_CREAT | OPMD_WRONLY);
+
     unsigned char buffer[512] = { 0x00 };
 
     for (size_t i = 0; i < blocks; i++)
     {
-        write(fd, buffer, 512);
+        disk.writeDisk(buffer, 512);
     }
 
-    close(fd);
-    return 0;
+    disk.closeDisk();
 }
+
+#endif

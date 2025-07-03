@@ -1,6 +1,8 @@
+#ifndef FS_HEADER
+#define FS_HEADER
+
 #include <cstdint>
 
-#pragma once
 #pragma pack(push, 1)
 
 struct FSHeader {
@@ -14,6 +16,8 @@ struct FSHeader {
     uint16_t maxFilenameLength; // file name max 
     uint32_t bitmapSizeBytes;
     uint8_t  reserved[20];      // reserve
-} __attribute__((packed));
+};
 
 #pragma pack(pop)
+
+#endif

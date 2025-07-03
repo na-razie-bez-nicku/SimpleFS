@@ -2,3 +2,6 @@
 /gitignored
 *.o
 *.bin
+/bin
+/obj
+/.vs

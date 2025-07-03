@@ -1,13 +1,15 @@
+#ifndef FORMAT
+#define FORMAT
+
 #include <cstdint>
 #include <cstring>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include <iostream>
-#include <sys/stat.h>
+#include <stdint.h>
 #include "fs_header.cpp"
+#include "disk.hpp"
+#include "methods.cpp"
 
-uint32_t calculateBitmapBlocks(uint64_t totalSizeBytes, uint32_t blockSize, uint32_t systemBlocksWithoutBitmap)
+unsigned int calculateBitmapBlocks(uint64_t totalSizeBytes, uint32_t blockSize, uint32_t systemBlocksWithoutBitmap)
 {
     uint32_t totalBlocks = totalSizeBytes / blockSize;
     uint32_t availableBlocks = totalBlocks - systemBlocksWithoutBitmap;
@@ -26,22 +28,16 @@ uint32_t calculateBitmapBlocks(uint64_t totalSizeBytes, uint32_t blockSize, uint
         lastResult = availableBlocks;
         availableBlocks = newAvailableBlocks;
     }
+    return 0;
 }
 
-int format(char *path)
+int format(Disk *diskPtr)
 {
+    Disk disk = *diskPtr;
+
     const int16_t blockSize = 512;
 
-    // char *path = strcat(rawPath, ".bin");
-
-    struct stat fileStat;
-    if (stat(path, &fileStat) == -1)
-    {
-        perror("stat");
-        return 1;
-    }
-
-    uint64_t totalSize = fileStat.st_size;
+    uint64_t totalSize = getFileSize(disk.path);
 
     if (totalSize < 8192 * blockSize)
     {
@@ -80,29 +76,22 @@ int format(char *path)
     bootSector[510] = 0x55;
     bootSector[511] = 0xAA;
 
-    // Open file
-    int fd = open(path, O_WRONLY, 0644);
-    if (fd < 0)
-    {
-        perror("open");
-        return 1;
-    }
-
     // Save sector
-    ssize_t written = write(fd, bootSector, sizeof(bootSector));
+    size_t written = disk.writeDisk(bootSector, sizeof(bootSector));
     if (written != sizeof(bootSector))
     {
-        perror("write");
-        close(fd);
+        disk.closeDisk();
         return 1;
     }
 
     uint8_t *bitmap = new uint8_t[bitmapSizeBytes2];
     memset(bitmap, 0, bitmapSizeBytes2);
 
-    lseek(fd, header.bitmapOffset, SEEK_SET);
-    write(fd, bitmap, bitmapSizeBytes2);
+    disk.seekDisk(header.bitmapOffset, UNISEEK_BEG);
+    disk.writeDisk(bitmap, bitmapSizeBytes2);
 
-    close(fd);
+    disk.closeDisk();
     return 0;
 }
+
+#endif

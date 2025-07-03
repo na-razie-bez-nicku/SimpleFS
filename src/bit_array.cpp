@@ -1,3 +1,6 @@
+#ifndef BIT_ARRAY
+#define BIT_ARRAY
+
 #include <vector>
 #include <cstdint>
 
@@ -33,3 +36,5 @@ public:
         return (byte & (1 << bitPos)) != 0;
     }
 };
+
+#endif

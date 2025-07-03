@@ -1,6 +1,9 @@
+#ifndef DIR_ENTRY
+#define DIR_ENTRY
+
 #include <cstdint>
 #include <cstring>
-#include <unistd.h>
+#include "disk.hpp"
 
 #pragma pack(push, 1)
 struct DirEntry {
@@ -25,15 +28,18 @@ DirEntry createDirEntry(const char* filename, uint32_t startBlock, uint32_t size
     return entry;
 }
 
-bool readDirEntry(int fd, off_t offset, DirEntry &entry) {
+bool readDirEntry(Disk *diskPtr, uint64_t offset, DirEntry& entry) {
+    Disk disk = *diskPtr;
+
     // przesuń wskaźnik na odpowiedni offset (np. rootDirOffset + index * sizeof(DirEntry))
-    if (lseek(fd, offset, SEEK_SET) < 0)
-        return false;
+    disk.seekDisk(offset, UNISEEK_BEG);
 
     // czytaj dane binarne do struktury
-    if (read(fd, &entry, sizeof(DirEntry)) != sizeof(DirEntry))
+    if (disk.readDisk(&entry, sizeof(DirEntry)) != sizeof(DirEntry))
         return false;
 
     // sprawdź magic string
     return std::memcmp(entry.magic, "ENTR", 4) == 0;
 }
+
+#endif

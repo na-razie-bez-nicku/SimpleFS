@@ -1,7 +1,25 @@
-#include "fileapi.hpp"
+#ifndef FILEAPI_CPP
+#define FILEAPI_CPP
+
+#include <limits>
+#include "disk.hpp"
 
 Disk::Disk(const char* path) {
-    this->path = path;
+	memcpy(this->path, path, strlen(path));
+}
+
+Disk::Disk(const Disk& other) {
+    path = strdup(other.path); // skopiuj zawartoœæ œcie¿ki
+    
+#ifdef _WIN32
+	handle = other.handle; // skopiuj uchwyt
+#else
+	fd = other.fd; // skopiuj deskryptor pliku
+#endif
+}
+
+Disk::~Disk() {
+    closeDisk(); // automatyczne zamykanie pliku
 }
 
 bool Disk::openDisk(uint8_t mode)
@@ -17,7 +35,11 @@ bool Disk::openDisk(uint8_t mode)
 	case OPMD_RDWR:
 		handle = CreateFile(path, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         break;
+	case OPMD_CREAT:
+		handle = CreateFile(path, OPEN_ALWAYS, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        break;
     }
+    return handle == INVALID_HANDLE_VALUE;
 #else
     switch (mode)
     {
@@ -35,31 +57,31 @@ bool Disk::openDisk(uint8_t mode)
 #endif
 }
 
-ssize_t Disk::readDisk(void *buffer, size_t size)
+size_t Disk::readDisk(void *buffer, size_t size)
 {
 #ifdef _WIN32
     DWORD bytesRead;
-    BOOL success = ReadFile(hFile, buffer, size, &bytesRead, NULL);
+    BOOL success = ReadFile(handle, buffer, size, &bytesRead, NULL);
 	if (success) {
-		return bytesRead; // Return number of bytes read
+		return  static_cast<size_t>(bytesRead);; // Return number of bytes read
 	}
     else
-        return -1; // Error reading file
+        return SIZE_MAX; // Error reading file
 #else
     return read(fd, buffer, size);
 #endif
 }
 
-ssize_t Disk::writeDisk(const void *buffer, size_t size)
+size_t Disk::writeDisk(const void *buffer, size_t size)
 {
 #ifdef _WIN32
     DWORD bytesWritten;
-    BOOL success = WriteFile(hFile, buffer, size, &bytesWritten, NULL);
+    BOOL success = WriteFile(handle, buffer, size, &bytesWritten, NULL);
     if (success) {
-        return bytesRead; // Return number of bytes read
+        return  static_cast<size_t>(bytesWritten);; // Return number of bytes read
     }
     else
-        return -1; // Error reading file
+        return SIZE_MAX; // Error reading file
 #else
     return write(fd, buffer, size);
 #endif
@@ -73,13 +95,13 @@ void Disk::seekDisk(uint64_t offset, uint8_t from)
     switch (from)
     {
     case UNISEEK_BEG:
-        SetFilePointerEx(hFile, li, NULL, FILE_BEGIN);
+        SetFilePointerEx(handle, li, NULL, FILE_BEGIN);
         break;
     case UNISEEK_CUR:
-        SetFilePointerEx(hFile, li, NULL, FILE_CURRENT);
+        SetFilePointerEx(handle, li, NULL, FILE_CURRENT);
         break;
     case UNISEEK_END:
-        SetFilePointerEx(hFile, li, NULL, FILE_END);
+        SetFilePointerEx(handle, li, NULL, FILE_END);
         break;
     }
 #else
@@ -101,8 +123,10 @@ void Disk::seekDisk(uint64_t offset, uint8_t from)
 void Disk::closeDisk()
 {
 #ifdef _WIN32
-    CloseHandle(hFile);
+    CloseHandle(handle);
 #else
     close(fd);
 #endif
 }
+
+#endif
