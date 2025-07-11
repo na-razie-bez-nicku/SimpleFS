@@ -8,16 +8,16 @@
 #pragma pack(push, 1)
 struct DirEntry
 {
-    char magic[4];        // "ENTR"
-    uint8_t pad0[2];      // 0x0000
-    char name[96];        // file name
-    uint8_t pad1[2];      // 0x0000
-    uint64_t startBlock;  // first block of file data position
-    uint8_t pad2[3];      // 0x0000
-    uint64_t sizeBytes;   // file size in bytes
-    uint8_t pad3[3];      // 0x0000
-    uint8_t type;         // 0 = file, 1 = directory
-    uint8_t reserved[1];  // reserve
+    char magic[4];       // "ENTR"
+    uint8_t pad0[2];     // 0x0000
+    char name[96];       // file name
+    uint8_t pad1[2];     // 0x0000
+    uint64_t startBlock; // first block of file data position
+    uint8_t pad2[3];     // 0x0000
+    uint64_t sizeBytes;  // file size in bytes
+    uint8_t pad3[3];     // 0x0000
+    uint8_t type;        // 0 = file, 1 = directory
+    uint8_t reserved[1]; // reserve
 };
 #pragma pack(pop)
 

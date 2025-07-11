@@ -90,18 +90,18 @@ int readHeader(Disk *disk, FSHeader &header)
     return bytesRead;
 }
 
-uint8_t *readBitmap(Disk disk)
+uint8_t *readBitmap(Disk *disk)
 {
     FSHeader header = {};
 
-    disk.readDisk(&header, sizeof(header));
+    disk->readDisk(&header, sizeof(header));
 
     uint32_t bitmapSizeBytes = (header.blockCount + 7) / 8;
 
     uint8_t *bitmap = new uint8_t[bitmapSizeBytes];
 
-    disk.seekDisk(header.bitmapOffset, UNISEEK_BEG);
-    disk.readDisk(bitmap, bitmapSizeBytes);
+    disk->seekDisk(header.bitmapOffset, UNISEEK_BEG);
+    disk->readDisk(bitmap, bitmapSizeBytes);
 
     return bitmap;
 }
@@ -122,26 +122,31 @@ void setBlockUsed(uint8_t *bitmap, uint32_t blockIndex, bool used)
         bitmap[byteIndex] &= ~bitMask; // wyczyść bit
 }
 
-bool saveBitmapToDisk(Disk disk, uint8_t *bitmap, uint32_t bitmapSizeBytes, uint32_t bitmapOffset)
+bool saveBitmapToDisk(Disk *disk, uint8_t *bitmap)
 {
-    disk.seekDisk(bitmapOffset, UNISEEK_BEG);
+    disk->seekDisk(0, UNISEEK_BEG);
 
-    size_t written = disk.writeDisk(bitmap, bitmapSizeBytes);
-    if (written != (size_t)bitmapSizeBytes)
+    FSHeader header = {};
+    readHeader(disk, header);
+
+    disk->seekDisk(header.bitmapOffset, UNISEEK_BEG);
+
+    size_t written = disk->writeDisk(bitmap, header.bitmapSizeBytes);
+    if (written != (size_t)header.bitmapSizeBytes)
     {
-        disk.closeDisk();
+        disk->closeDisk();
         return false;
     }
 
     return true;
 }
 
-bool readRootDir(Disk disk, uint32_t rootDirOffset, uint32_t rootDirSizeBytes, std::vector<DirEntry> &entries)
+bool readRootDir(Disk *disk, uint32_t rootDirOffset, uint32_t rootDirSizeBytes, std::vector<DirEntry> &entries)
 {
-    disk.seekDisk(rootDirOffset, UNISEEK_BEG);
+    disk->seekDisk(rootDirOffset, UNISEEK_BEG);
 
     std::vector<uint8_t> buffer(rootDirSizeBytes);
-    size_t bytesRead = disk.readDisk(buffer.data(), rootDirSizeBytes);
+    size_t bytesRead = disk->readDisk(buffer.data(), rootDirSizeBytes);
 
     if (bytesRead != (size_t)rootDirSizeBytes)
     {
@@ -170,6 +175,20 @@ bool writeRootDir(Disk *disk, uint32_t rootDirOffset, const std::vector<DirEntry
     }
 
     return true;
+}
+
+void updateBitmap(Disk *disk, DirEntry entry)
+{
+    uint8_t *bitmap = readBitmap(disk);
+
+    uint64_t startBlock = entry.startBlock;
+    uint64_t usedBlocks = (entry.sizeBytes + 511) / 512;
+    uint64_t endBlock = startBlock + usedBlocks;
+
+    for (size_t i = startBlock; i < endBlock; i++)
+        setBlockUsed(bitmap, i, true);
+
+    saveBitmapToDisk(disk, bitmap);
 }
 
 void createFile(Disk *disk, const char *filePath, const char *content)
