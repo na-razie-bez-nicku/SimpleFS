@@ -10,16 +10,15 @@
 #include "methods.cpp"
 #include "disk.hpp"
 
-int printHeader(Disk *diskPtr)
+int printHeader(Disk disk)
 {
-    Disk disk = *diskPtr;
     const int SECTOR_SIZE = 512;
     char buffer[SECTOR_SIZE];
 
     size_t bytesRead = disk.readDisk(buffer, SECTOR_SIZE);
     if (bytesRead != SECTOR_SIZE)
     {
-		disk.closeDisk();
+        disk.closeDisk();
         return 1;
     }
 
@@ -48,33 +47,51 @@ int printHeader(Disk *diskPtr)
     return 0;
 }
 
-void readHeader(Disk *diskPtr, FSHeader &header)
+int printHeader(FSHeader header)
 {
-    Disk disk = *diskPtr;
+    // Wyświetl dane
+    std::cout << "✅ SIMPLEFS header loaded!" << std::endl;
+    std::cout << "Version:             " << header.version << std::endl;
+    std::cout << "Block size:          " << header.blockSize << " bytes" << std::endl;
+    std::cout << "Total blocks:        " << header.blockCount << std::endl;
+    std::cout << "Free blocks:         " << header.freeBlockCount << std::endl;
+    std::cout << "Bitmap offset:       " << header.bitmapOffset << " bytes" << std::endl;
+    std::cout << "Root dir offset:     " << header.rootDirOffset << " bytes" << std::endl;
+    std::cout << "Max filename length: " << header.maxFilenameLength << " characters" << std::endl;
+    std::cout << "Bitmap Size: " << header.bitmapSizeBytes << " bytes" << std::endl;
+
+    return 0;
+}
+
+int readHeader(Disk *disk, FSHeader &header)
+{
+    disk->seekDisk(0, UNISEEK_BEG);
+
     const int SECTOR_SIZE = 512;
     char buffer[SECTOR_SIZE];
 
-    size_t bytesRead = disk.readDisk(buffer, SECTOR_SIZE);
+    size_t bytesRead = disk->readDisk(buffer, SECTOR_SIZE);
     if (bytesRead != SECTOR_SIZE)
     {
-        disk.closeDisk();
-        return;
+        disk->closeDisk();
+        return -1;
     }
 
-    // Przekształć bajty do struktury=
+    // Przekształć bajty do struktury
     std::memcpy(&header, buffer, sizeof(FSHeader));
 
     // Sprawdź magic string
     if (std::memcmp(header.magic, "SIMPLEFS", 8) != 0)
     {
         std::cerr << "Invalid file system (magic mismatch)" << std::endl;
-        return;
+        return -1;
     }
+
+    return bytesRead;
 }
 
-uint8_t *readBitmap(Disk *diskPtr)
+uint8_t *readBitmap(Disk disk)
 {
-    Disk disk = *diskPtr;
     FSHeader header = {};
 
     disk.readDisk(&header, sizeof(header));
@@ -105,26 +122,22 @@ void setBlockUsed(uint8_t *bitmap, uint32_t blockIndex, bool used)
         bitmap[byteIndex] &= ~bitMask; // wyczyść bit
 }
 
-bool saveBitmapToDisk(Disk *diskPtr, uint8_t *bitmap, uint32_t bitmapSizeBytes, uint32_t bitmapOffset)
+bool saveBitmapToDisk(Disk disk, uint8_t *bitmap, uint32_t bitmapSizeBytes, uint32_t bitmapOffset)
 {
-    Disk disk = *diskPtr;
-
     disk.seekDisk(bitmapOffset, UNISEEK_BEG);
 
     size_t written = disk.writeDisk(bitmap, bitmapSizeBytes);
     if (written != (size_t)bitmapSizeBytes)
     {
-		disk.closeDisk();
+        disk.closeDisk();
         return false;
     }
 
     return true;
 }
 
-bool readRootDir(Disk *diskPtr, uint32_t rootDirOffset, uint32_t rootDirSizeBytes, std::vector<DirEntry>& entries)
+bool readRootDir(Disk disk, uint32_t rootDirOffset, uint32_t rootDirSizeBytes, std::vector<DirEntry> &entries)
 {
-    Disk disk = *diskPtr;
-
     disk.seekDisk(rootDirOffset, UNISEEK_BEG);
 
     std::vector<uint8_t> buffer(rootDirSizeBytes);
@@ -144,13 +157,11 @@ bool readRootDir(Disk *diskPtr, uint32_t rootDirOffset, uint32_t rootDirSizeByte
     return true;
 }
 
-bool writeRootDir(Disk *diskPtr, uint32_t rootDirOffset, const std::vector<DirEntry> &entries)
+bool writeRootDir(Disk *disk, uint32_t rootDirOffset, const std::vector<DirEntry> &entries)
 {
-    Disk disk = *diskPtr;
+    disk->seekDisk(rootDirOffset, UNISEEK_BEG);
 
-    disk.seekDisk(rootDirOffset, UNISEEK_BEG);
-
-    size_t bytesWritten = disk.writeDisk(entries.data(), entries.size() * sizeof(DirEntry));
+    size_t bytesWritten = disk->writeDisk(entries.data(), entries.size() * sizeof(DirEntry));
 
     if (bytesWritten != (size_t)(entries.size() * sizeof(DirEntry)))
     {
@@ -161,18 +172,16 @@ bool writeRootDir(Disk *diskPtr, uint32_t rootDirOffset, const std::vector<DirEn
     return true;
 }
 
-void createFile(Disk *diskPtr, const char *filePath, const char *content)
+void createFile(Disk *disk, const char *filePath, const char *content)
 {
-    Disk disk = *diskPtr;
-
-    FSHeader header;
-    readHeader(&disk, header);
+    FSHeader header = {};
+    readHeader(disk, header);
 
     bool created = false;
 
     for (size_t i = 0; i < 256; i++)
     {
-        DirEntry entry;
+        DirEntry entry = {};
         if (!readDirEntry(disk, header.rootDirOffset + i * sizeof(DirEntry), entry))
         {
             std::cerr << "Magic is not correct" << std::endl;
@@ -186,9 +195,9 @@ void createFile(Disk *diskPtr, const char *filePath, const char *content)
             continue;
         }
 
-        disk.seekDisk(entry.startBlock * 512, UNISEEK_BEG);
+        disk->seekDisk(entry.startBlock * 512, UNISEEK_BEG);
 
-        disk.writeDisk(content, entry.sizeBytes);
+        disk->writeDisk(content, entry.sizeBytes);
         created = true;
 
         std::cout << "File created." << std::endl;

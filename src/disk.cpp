@@ -1,58 +1,28 @@
 #ifndef FILEAPI_CPP
 #define FILEAPI_CPP
 
-#include <limits>
 #include "disk.hpp"
 
-Disk::Disk(const char* path) {
-	memcpy(this->path, path, strlen(path));
+Disk::Disk(std::string path)
+{
+    this->path = path;
 }
 
-Disk::Disk(const Disk& other) {
-    path = strdup(other.path); // skopiuj zawartoœæ œcie¿ki
-    
-#ifdef _WIN32
-	handle = other.handle; // skopiuj uchwyt
-#else
-	fd = other.fd; // skopiuj deskryptor pliku
-#endif
-}
-
-Disk::~Disk() {
+Disk::~Disk()
+{
     closeDisk(); // automatyczne zamykanie pliku
 }
 
 bool Disk::openDisk(uint8_t mode)
 {
 #ifdef _WIN32
-    switch (mode) {
-	case OPMD_RDONLY:
-		handle = CreateFile(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		break;
-	case OPMD_WRONLY:
-		handle = CreateFile(path, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-        break;
-	case OPMD_RDWR:
-		handle = CreateFile(path, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-        break;
-	case OPMD_CREAT:
-		handle = CreateFile(path, OPEN_ALWAYS, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-        break;
-    }
+    if (mode & OPMD_CREAT)
+        handle = CreateFile(path, mode, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    else
+        handle = CreateFile(path, mode, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     return handle == INVALID_HANDLE_VALUE;
 #else
-    switch (mode)
-    {
-    case OPMD_RDONLY:
-        fd = open(path, O_RDONLY);
-        break;
-    case OPMD_WRONLY:
-        fd = open(path, O_WRONLY);
-        break;
-    case OPMD_RDWR:
-        fd = open(path, O_RDWR);
-        break;
-    }
+    fd = open(path.c_str(), mode, 0644);
     return fd >= 0;
 #endif
 }
@@ -62,9 +32,11 @@ size_t Disk::readDisk(void *buffer, size_t size)
 #ifdef _WIN32
     DWORD bytesRead;
     BOOL success = ReadFile(handle, buffer, size, &bytesRead, NULL);
-	if (success) {
-		return  static_cast<size_t>(bytesRead);; // Return number of bytes read
-	}
+    if (success)
+    {
+        return static_cast<size_t>(bytesRead);
+        ; // Return number of bytes read
+    }
     else
         return SIZE_MAX; // Error reading file
 #else
@@ -77,8 +49,10 @@ size_t Disk::writeDisk(const void *buffer, size_t size)
 #ifdef _WIN32
     DWORD bytesWritten;
     BOOL success = WriteFile(handle, buffer, size, &bytesWritten, NULL);
-    if (success) {
-        return  static_cast<size_t>(bytesWritten);; // Return number of bytes read
+    if (success)
+    {
+        return static_cast<size_t>(bytesWritten);
+        ; // Return number of bytes read
     }
     else
         return SIZE_MAX; // Error reading file
@@ -87,11 +61,20 @@ size_t Disk::writeDisk(const void *buffer, size_t size)
 #endif
 }
 
-void Disk::seekDisk(uint64_t offset, uint8_t from)
+void Disk::flushDisk()
+{
+#ifdef _WIN32
+    FlushFileBuffers(handle);
+#else
+    fsync(fd);
+#endif
+}
+
+size_t Disk::seekDisk(uint64_t offset, uint8_t from)
 {
 #ifdef _WIN32
     LARGE_INTEGER li;
-    li.QuadPart = offset;  // offset
+    li.QuadPart = offset; // offset
     switch (from)
     {
     case UNISEEK_BEG:
@@ -105,18 +88,7 @@ void Disk::seekDisk(uint64_t offset, uint8_t from)
         break;
     }
 #else
-    switch (from)
-    {
-    case UNISEEK_BEG:
-        lseek(fd, offset, SEEK_SET);
-        break;
-    case UNISEEK_CUR:
-        lseek(fd, offset, SEEK_CUR);
-        break;
-    case UNISEEK_END:
-        lseek(fd, offset, SEEK_END);
-        break;
-    }
+    return lseek(fd, offset, from);
 #endif
 }
 

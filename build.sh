@@ -3,6 +3,9 @@ if [ ! -d build ]; then
 fi
 
 g++ -c src/main.cpp -o main.o
-g++ main.o -o ./build/main
+g++ -c src/disk.cpp -o disk.o
+
+g++ main.o disk.o -o ./build/main
 
 rm main.o
+rm disk.o

@@ -1,5 +1,3 @@
-#define _AMD64_ 1
-
 #include "format.cpp"
 #include "create.cpp"
 #include "io.cpp"
@@ -8,17 +6,20 @@
 
 int main(int argc, char *argv[])
 {
-    Disk disk("C:\\SimpleDisks\\disk.bin");
+    Disk disk("disk.bin");
 
-    if (!exists("C:\\SimpleDisks\\disk.bin"))
+    if (!exists("disk.bin"))
     {
-        create(&disk);
+        create("disk.bin");
 
         disk.openDisk(OPMD_RDWR);
 
         format(&disk);
+
+        disk.seekDisk(0, UNISEEK_BEG);
     }
-    else {
+    else
+    {
         disk.openDisk(OPMD_RDWR);
     }
 
@@ -38,23 +39,22 @@ int main(int argc, char *argv[])
     //     }
     // }
 
-    printHeader(&disk);
-
     FSHeader header = {};
 
     readHeader(&disk, header);
 
+    printHeader(header);
     // uint8_t *bitmap = readBitmap("disk.bin");
 
     // saveBitmapToDisk("disk.bin", bitmap, header.bitmapSizeBytes, header.bitmapOffset);
 
     writeRootDir(&disk, header.rootDirOffset, std::vector<DirEntry>{
-                                                       createDirEntry("Hello.txt", 68, 25, 0),  // Hello World from SimpleFS
-                                                       createDirEntry("Hello2.txt", 69, 32, 0), // Second Hello World from SimpleFS
-                                                       createDirEntry("Lorem Ipsum.txt", 70, 3284, 0),
-                                                       createDirEntry("Moby Dick; Or, The Whale.txt", 77, 1276288, 0),
-                                                       createDirEntry("The History of Herodotus — Volume 1.txt", 2570, 915847, 0),
-                                                   });
+                                                 createDirEntry("Hello.txt", 68, 25, 0),  // Hello World from SimpleFS
+                                                 createDirEntry("Hello2.txt", 69, 32, 0), // Second Hello World from SimpleFS
+                                                 createDirEntry("Lorem Ipsum.txt", 70, 3284, 0),
+                                                 createDirEntry("Moby Dick; Or, The Whale.txt", 77, 1276288, 0),
+                                                 createDirEntry("The History of Herodotus — Volume 1.txt", 2570, 915847, 0),
+                                             });
 
     createFile(&disk, "Hello.txt", "Hello World from SimpleFS");
     createFile(&disk, "Hello2.txt", "Second Hello World from SimpleFS");
@@ -67,6 +67,26 @@ Nulla fermentum aliquam est, nec suscipit dolor eleifend ac. Quisque mi metus, v
 Phasellus eros leo, accumsan quis lacinia sed, congue at sapien. Donec imperdiet sapien nec euismod ornare. Nulla et malesuada mauris, vitae viverra nulla. In elit nibh, ullamcorper ornare hendrerit sed, pulvinar vitae velit. Pellentesque quis justo suscipit, placerat leo at, cursus justo. Praesent mattis suscipit eros sit amet dapibus. Nullam posuere metus dui, quis hendrerit ligula rhoncus vel. Quisque efficitur urna a nisi posuere imperdiet. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi finibus elementum ex, vel vehicula enim placerat vitae. Sed augue libero, consectetur pulvinar nibh ac, ornare pretium est. Sed urna nunc, gravida ac vulputate quis, egestas id velit. Proin finibus ornare arcu, eget tristique augue rutrum id. Vivamus commodo sem in diam vulputate, id rhoncus leo fermentum. Sed ligula est, suscipit ac leo in, hendrerit aliquam orci.
 
 Interdum et malesuada fames ac ante ipsum primis in faucibus. Curabitur et magna vehicula, suscipit ipsum eu, vestibulum magna. Etiam nec cursus augue. Praesent sollicitudin venenatis nisi in porta. Donec sed aliquet dolor. Donec non pellentesque lorem. Morbi luctus leo at velit condimentum imperdiet. Mauris eget mi libero. Suspendisse nec purus vitae ligula aliquam efficitur. Pellentesque pellentesque finibus ante a semper. Ut molestie eget nunc in tincidunt. Cras mattis suscipit quam, ac suscipit massa placerat sollicitudin. Donec rhoncus tellus interdum, semper libero non, hendrerit lacus. Aenean vehicula tortor velit, quis vulputate purus rutrum id.)");
+
+    int fd = open("gitignored/Moby Dick; Or, The Whale.txt", O_RDONLY);
+
+    char *text = (char *)malloc(1276288);
+    read(fd, text, 1276288);
+    close(fd);
+
+    createFile(&disk, "Moby Dick; Or, The Whale.txt", text);
+
+    free(text);
+
+    fd = open("gitignored/The History of Herodotus — Volume 1.txt", O_RDONLY);
+
+    text = (char *)malloc(915847);
+    read(fd, text, 915847);
+    close(fd);
+
+    createFile(&disk, "The History of Herodotus — Volume 1.txt", text);
+
+    free(text);
 
     disk.closeDisk();
 

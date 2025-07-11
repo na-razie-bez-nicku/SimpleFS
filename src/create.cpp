@@ -4,27 +4,31 @@
 #include "disk.hpp"
 #include <iostream>
 
-void create(Disk *diskPtr)
+void create(char *path)
 {
     // char *file_name;
     // std::cout << "Enter file name (without extension): ";
     // std::cin >> file_name;
 
-    int blocks;
+    int megabytes;
 
-    std::cout << "Enter blocks of disk (1 block = 512 bytes): ";
+    std::cout << "Enter size of disk (MB): ";
 
-    std::cin >> blocks;
+    std::cin >> megabytes;
 
-    Disk disk = *diskPtr;
+    Disk disk(path);
 
-	disk.openDisk(OPMD_CREAT | OPMD_WRONLY);
-
-    unsigned char buffer[512] = { 0x00 };
-
-    for (size_t i = 0; i < blocks; i++)
+    if (!disk.openDisk(OPMD_CREAT | OPMD_WRONLY))
     {
-        disk.writeDisk(buffer, 512);
+        std::cerr << "Failed to open or create file: " << path << std::endl;
+        return;
+    }
+
+    unsigned char buffer[1048576] = {0x00};
+
+    for (size_t i = 0; i < megabytes; i++)
+    {
+        disk.writeDisk(buffer, 1048576);
     }
 
     disk.closeDisk();

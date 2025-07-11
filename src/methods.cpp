@@ -40,7 +40,7 @@ uint64_t getFileSize(const std::string& filename) {
 	}
 #else
 	struct stat buffer;
-	if (stat(name.c_str(), &buffer) == 0) {
+	if (stat(filename.c_str(), &buffer) == 0) {
 		return buffer.st_size; // Return file size in bytes
 	}
 	else

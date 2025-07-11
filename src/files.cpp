@@ -3,9 +3,8 @@
 
 #include "io.cpp"
 
-int readTextFile(Disk *diskPtr, DirEntry entry, uint8_t *&buffer, uint32_t offset, uint32_t size)
+int readTextFile(Disk disk, DirEntry entry, uint8_t *&buffer, uint32_t offset, uint32_t size)
 {
-    Disk disk = *diskPtr;
     uint32_t minimumSize = offset + size;
 
     uint32_t finalSize = size;

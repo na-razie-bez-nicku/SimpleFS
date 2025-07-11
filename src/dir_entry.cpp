@@ -6,17 +6,23 @@
 #include "disk.hpp"
 
 #pragma pack(push, 1)
-struct DirEntry {
-    char     magic[4];     // "ENTR"
-    char     name[96];     // file name
-    uint64_t startBlock;   // first block of file data position
-    uint64_t sizeBytes;    // file size in bytes
-    uint8_t  type;         // 0 = file, 1 = directory
-    uint8_t  reserved[11]; // reserve
+struct DirEntry
+{
+    char magic[4];        // "ENTR"
+    uint8_t pad0[2];      // 0x0000
+    char name[96];        // file name
+    uint8_t pad1[2];      // 0x0000
+    uint64_t startBlock;  // first block of file data position
+    uint8_t pad2[3];      // 0x0000
+    uint64_t sizeBytes;   // file size in bytes
+    uint8_t pad3[3];      // 0x0000
+    uint8_t type;         // 0 = file, 1 = directory
+    uint8_t reserved[1];  // reserve
 };
 #pragma pack(pop)
 
-DirEntry createDirEntry(const char* filename, uint32_t startBlock, uint32_t sizeBytes, uint8_t type) {
+DirEntry createDirEntry(const char *filename, uint32_t startBlock, uint32_t sizeBytes, uint8_t type)
+{
     DirEntry entry;
     std::memset(&entry, 0, sizeof(entry));
     memcpy(entry.magic, "ENTR", 4);
@@ -28,14 +34,13 @@ DirEntry createDirEntry(const char* filename, uint32_t startBlock, uint32_t size
     return entry;
 }
 
-bool readDirEntry(Disk *diskPtr, uint64_t offset, DirEntry& entry) {
-    Disk disk = *diskPtr;
-
+bool readDirEntry(Disk *disk, uint64_t offset, DirEntry &entry)
+{
     // przesuń wskaźnik na odpowiedni offset (np. rootDirOffset + index * sizeof(DirEntry))
-    disk.seekDisk(offset, UNISEEK_BEG);
+    disk->seekDisk(offset, UNISEEK_BEG);
 
     // czytaj dane binarne do struktury
-    if (disk.readDisk(&entry, sizeof(DirEntry)) != sizeof(DirEntry))
+    if (disk->readDisk(&entry, sizeof(DirEntry)) != sizeof(DirEntry))
         return false;
 
     // sprawdź magic string
