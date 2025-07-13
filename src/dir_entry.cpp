@@ -21,7 +21,7 @@ struct DirEntry
 };
 #pragma pack(pop)
 
-DirEntry createDirEntry(const char *filename, uint32_t startBlock, uint32_t sizeBytes, uint8_t type)
+DirEntry createDirEntry(const char *filename, uint64_t startBlock, uint64_t sizeBytes, uint8_t type)
 {
     DirEntry entry;
     std::memset(&entry, 0, sizeof(entry));

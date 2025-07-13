@@ -10,6 +10,7 @@
 #include <cstring>
 #include <vector>
 #include <stdint.h>
+#include <cctype>
 
 inline bool exists (const std::string& name) {
 #ifdef _WIN32
@@ -64,6 +65,15 @@ std::vector<char*> split_cstr(char* str, char delimiter) {
     }
 
 	return tokens;
+}
+
+bool containsLetter(const std::string& s) {
+    for (char c : s) {
+        if (std::isalpha(static_cast<unsigned char>(c))) {
+            return true;
+        }
+    }
+    return false;
 }
 
 #endif

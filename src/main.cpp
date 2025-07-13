@@ -2,93 +2,143 @@
 #include "create.cpp"
 #include "io.cpp"
 #include "methods.cpp"
+#include <map>
 #include <fstream>
 
 int main(int argc, char *argv[])
 {
-    Disk disk("disk.bin");
+    bool running = true;
 
-    if (!exists("disk.bin"))
-    {
-        create("disk.bin");
+    std::map<std::string, Disk> mounted_disks;
 
-        disk.openDisk(OPMD_RDWR);
+    std::string selected_disk = "/";
 
-        format(&disk);
+    // if (!exists("disk.bin"))
+    // {
+    //     create("disk.bin");
 
-        disk.seekDisk(0, UNISEEK_BEG);
-    }
-    else
-    {
-        disk.openDisk(OPMD_RDWR);
-    }
+    //     disk.openDisk(OPMD_RDWR);
 
-    // if(argc > 1){
-    //     if(argv[1] == "format"){
-    //         if(argc > 2)
-    //             format(argv[2]);
-    //         else
-    //             format("disk");
-    //     }
-    //     else if(argv[1] == "create"){
-    //         create();
-    //     }
-    //     else{
-    //         std::cout << "command " << argv[1] << " doesn't exists\n" << argc;
+    //     format(&disk);
 
-    //     }
+    //     disk.seekDisk(0, UNISEEK_BEG);
+    // }
+    // else
+    // {
+    //     disk.openDisk(OPMD_RDWR);
     // }
 
-    FSHeader header = {};
+    char *charCommand;
 
-    readHeader(&disk, header);
+    while (running)
+    {
+        std::cout << "SimpleFS:" << selected_disk << "$ ";
 
-    printHeader(header);
-    // uint8_t *bitmap = readBitmap("disk.bin");
+        std::string command;
+        getline(std::cin, command);
 
-    // saveBitmapToDisk("disk.bin", bitmap, header.bitmapSizeBytes, header.bitmapOffset);
+        if (!containsLetter(command))
+        {
+            std::cout << "Please enter command! \"" << command << "\" is not a valid command" << std::endl;
+            continue;
+        }
 
-    writeRootDir(&disk, header.rootDirOffset, std::vector<DirEntry>{
-                                                 createDirEntry("Hello.txt", 68, 25, 0),  // Hello World from SimpleFS
-                                                 createDirEntry("Hello2.txt", 69, 32, 0), // Second Hello World from SimpleFS
-                                                 createDirEntry("Lorem Ipsum.txt", 70, 3284, 0),
-                                                 createDirEntry("Moby Dick; Or, The Whale.txt", 77, 1276288, 0),
-                                                 createDirEntry("The History of Herodotus — Volume 1.txt", 2570, 915847, 0),
-                                             });
+        charCommand = (char *)malloc(command.length() + 1);
 
-    createFile(&disk, "Hello.txt", "Hello World from SimpleFS");
-    createFile(&disk, "Hello2.txt", "Second Hello World from SimpleFS");
-    createFile(&disk, "Lorem Ipsum.txt", R"(Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras interdum facilisis urna sit amet luctus. Cras luctus efficitur quam, non porta turpis malesuada id. Mauris tempor molestie cursus. Nam gravida, nisl vitae rutrum bibendum, est justo finibus lacus, a ullamcorper justo felis et sapien. Proin bibendum finibus enim. Sed sed urna maximus, sodales lacus eu, condimentum quam. Ut pharetra lobortis varius. Nunc at augue vestibulum, sagittis justo sit amet, ultricies purus.
+        memcpy(charCommand, command.c_str(), command.length());
 
-Donec feugiat porttitor risus, vel accumsan ligula porttitor eget. Praesent gravida, ipsum in aliquet venenatis, nisi orci eleifend tellus, sit amet ullamcorper lacus lorem hendrerit sapien. Nam in libero a ex sagittis molestie vitae eu lacus. Suspendisse potenti. Morbi placerat diam eu interdum venenatis. Praesent tincidunt risus arcu, non elementum risus viverra sed. Nunc dignissim luctus aliquam. Etiam facilisis elit placerat mauris finibus sodales. Quisque accumsan malesuada ornare. Suspendisse vel pharetra lacus. Donec ultricies mauris ut nisi maximus, ut cursus neque suscipit. Sed vel laoreet risus. Duis ac nibh sem. Aenean neque ex, blandit vel risus et, semper posuere sem. Sed ipsum mi, mattis et enim sit amet, egestas semper ante. Nunc pharetra libero nec facilisis lobortis.
+        charCommand[command.length()] = '\0';
 
-Nulla fermentum aliquam est, nec suscipit dolor eleifend ac. Quisque mi metus, venenatis quis egestas sit amet, sollicitudin porta augue. Integer lobortis in tortor a lacinia. Pellentesque vitae euismod est. Vivamus feugiat fermentum turpis ac congue. Etiam ullamcorper ultricies eros, eget bibendum nisi aliquet quis. Nam ex tellus, dignissim et interdum in, interdum nec felis. Ut neque nulla, vehicula ac molestie id, finibus in enim. Sed sed ultricies ligula.
+        std::vector<char *> args = split_cstr(charCommand, ' ');
 
-Phasellus eros leo, accumsan quis lacinia sed, congue at sapien. Donec imperdiet sapien nec euismod ornare. Nulla et malesuada mauris, vitae viverra nulla. In elit nibh, ullamcorper ornare hendrerit sed, pulvinar vitae velit. Pellentesque quis justo suscipit, placerat leo at, cursus justo. Praesent mattis suscipit eros sit amet dapibus. Nullam posuere metus dui, quis hendrerit ligula rhoncus vel. Quisque efficitur urna a nisi posuere imperdiet. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi finibus elementum ex, vel vehicula enim placerat vitae. Sed augue libero, consectetur pulvinar nibh ac, ornare pretium est. Sed urna nunc, gravida ac vulputate quis, egestas id velit. Proin finibus ornare arcu, eget tristique augue rutrum id. Vivamus commodo sem in diam vulputate, id rhoncus leo fermentum. Sed ligula est, suscipit ac leo in, hendrerit aliquam orci.
+        if (strcmp(args[0], "mkfile") == 0)
+        {
+            
+        }
+        else if (strcmp(args[0], "select") == 0)
+        {
+            if (args.size() == 1)
+            {
+                selected_disk = "/";
+            }
+            else
+            {
+                if (mounted_disks.count(std::string(args[1])) != 0)
+                    selected_disk = "/" + std::string(args[1]);
+                else
+                    std::cout << "Disk \"" << args[1] << "\" not found" << std::endl;
+            }
+        }
+        else if (strcmp(args[0], "create") == 0)
+        {
+            if (args.size() < 3)
+            {
+                std::cout << "To few arguments:" << std::endl
+                          << "create <path> <size>" << std::endl
+                          << "path - Path to new disk image" << std::endl
+                          << "size - Size of image" << std::endl;
 
-Interdum et malesuada fames ac ante ipsum primis in faucibus. Curabitur et magna vehicula, suscipit ipsum eu, vestibulum magna. Etiam nec cursus augue. Praesent sollicitudin venenatis nisi in porta. Donec sed aliquet dolor. Donec non pellentesque lorem. Morbi luctus leo at velit condimentum imperdiet. Mauris eget mi libero. Suspendisse nec purus vitae ligula aliquam efficitur. Pellentesque pellentesque finibus ante a semper. Ut molestie eget nunc in tincidunt. Cras mattis suscipit quam, ac suscipit massa placerat sollicitudin. Donec rhoncus tellus interdum, semper libero non, hendrerit lacus. Aenean vehicula tortor velit, quis vulputate purus rutrum id.)");
+                continue;
+            }
 
-    int fd = open("gitignored/Moby Dick; Or, The Whale.txt", O_RDONLY);
+            if (!exists(args[1]))
+                create(args[1], std::atoi(args[2]));
+            else
+                std::cout << "disk image \"" << args[1] << "\" already exists";
+        }
+        else if (strcmp(args[0], "mount") == 0)
+        {
+            if (args.size() < 3)
+            {
+                std::cout << "To few arguments:" << std::endl
+                          << "mount <diskpath> <mountname>" << std::endl
+                          << "diskpath - Path to disk" << std::endl
+                          << "mountname - Name for mounted disk." << std::endl;
+                continue;
+            }
+            if (mounted_disks.count(std::string(args[2])) != 0)
+            {
+                std::cout << "ERROR: disk with name \"" << args[2] << "\" is already mounted. Try with another name" << std::endl;
+                continue;
+            }
+            if (!exists(args[1]))
+            {
+                std::cout << "disk \"" << args[1] << "\" doesn't exists";
+            }
+            Disk disk(args[1]);
+            mounted_disks.insert_or_assign(args[2], disk);
+            mounted_disks.at(std::string(args[2])).openDisk(OPMD_RDWR);
+            
+            std::cout << "Disk has been mounted" << std::endl;
+        }
+        else if (strcmp(args[0], "format") == 0)
+        {
+            if (args.size() < 2)
+            {
+                std::cout << "To few arguments:" << std::endl
+                          << "format <disk>" << std::endl
+                          << "disk - Disk name given in the \"mount\" command" << std::endl;
+                continue;
+            }
+            if (mounted_disks.count(std::string(args[1])) != 0)
+            {
+                format(&mounted_disks.at(std::string(args[1])));
+                std::cout << "Disk formated!" << std::endl;
+            }
+            else
+                std::cout << "Disk \"" << args[1] << "\" not found" << std::endl;
+        }
+        else if (strcmp(args[0], "exit") == 0)
+        {
+            running = false;
+            for (auto disk : mounted_disks)
+            {
+                disk.second.closeDisk();
+            }
+        }
 
-    char *text = (char *)malloc(1276288);
-    read(fd, text, 1276288);
-    close(fd);
-
-    createFile(&disk, "Moby Dick; Or, The Whale.txt", text);
-
-    free(text);
-
-    fd = open("gitignored/The History of Herodotus — Volume 1.txt", O_RDONLY);
-
-    text = (char *)malloc(915847);
-    read(fd, text, 915847);
-    close(fd);
-
-    createFile(&disk, "The History of Herodotus — Volume 1.txt", text);
-
-    free(text);
-
-    disk.closeDisk();
+        free(charCommand);
+    }
 
     return 0;
 }

@@ -18,12 +18,12 @@ struct FSHeader {
     uint8_t  pad4[4];           // 0x00000000
     uint32_t bitmapOffset;      // allocation bitmap offset (in bytes)
     uint8_t  pad5[4];           // 0x00000000
-    uint32_t rootDirOffset;     // root directory offset (in bytes)
+    uint64_t rootDirOffset;     // root directory offset (in bytes)
     uint8_t  pad6[2];           // 0x0000
     uint16_t maxFilenameLength; // file name max
     uint8_t  pad7[2];           // 0x0000
     uint32_t bitmapSizeBytes;
-    uint8_t  reserved[436];     // reserve
+    uint8_t  reserved[432];     // reserve
     uint8_t  end[2];
 };
 

@@ -4,21 +4,23 @@ SimpleFS is a file system which can do basic operations on files.
 
 ## ⚠️ WARNING
 
-This file system is **experimental and under development**.  
-It is intended for **educational and testing purposes only**.  
+This file system is **experimental and under development**.
+It is intended for **educational and testing purposes only**.
 
-❗ Do **not** use it on physical drives or in any production environment.  
+❗ Do **not** use it on physical drives or in any production environment.
 If you choose to use it on real hardware, **you do so at your own risk**.
 
 ## 📦 Project Status
 
-This project is in a **very early development stage**.  
+This project is in a **very early development stage**.
 Currently, it supports only basic operations:
 
-- Creating an empty disk image using the `create` tool
-- Creating a partition on an existing image using the `main` executable
+- creating disk image with shell command `create <path> <size in MB>`
+- format disk with shell command `format <path>`
+- mounting disk with shell command `mount <diskpath> <mountname>`
+- select mounted disk with shell command `select [disk]`
 
-Both tools are located in the `build/` directory.
+To run SimpleFS shell, just run `simplefs` in `build/` directory
 
 Please note that the file system is not fully functional yet and is intended **for testing and experimentation purposes only**.
 
@@ -27,5 +29,11 @@ Please note that the file system is not fully functional yet and is intended **f
 - [x] Create bitmap allocation system
 - [x] Add root directory
 - [x] Implement file creation
+- [ ] SimpleFS shell
+  - [x] `create`
+  - [x] `format`
+  - [x] `mount`
+  - [x] `select`
+  - [ ] `mk`
 - [ ] Support subdirectories
 - [ ] Write/Read file data

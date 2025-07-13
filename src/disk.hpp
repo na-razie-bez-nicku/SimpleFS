@@ -32,14 +32,14 @@
 class Disk
 {
 public:
-	Disk();
+	Disk() = default;
 	Disk(std::string path);
 	/*explicit Disk(const char* p) : path(p) {}
 	const char* path;*/
 	~Disk();
 
-	Disk(const Disk &) = delete;
-	Disk &operator=(const Disk &) = delete;
+	// Disk(const Disk &) = delete;
+	// Disk &operator=(const Disk &) = delete;
 
 	/*Disk(const Disk&) = delete;
 	Disk& operator=(const Disk&) = delete;

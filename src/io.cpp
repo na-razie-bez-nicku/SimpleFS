@@ -94,7 +94,7 @@ uint8_t *readBitmap(Disk *disk)
 {
     FSHeader header = {};
 
-    disk->readDisk(&header, sizeof(header));
+    readHeader(disk, header);
 
     uint32_t bitmapSizeBytes = (header.blockCount + 7) / 8;
 
@@ -179,6 +179,9 @@ bool writeRootDir(Disk *disk, uint32_t rootDirOffset, const std::vector<DirEntry
 
 void updateBitmap(Disk *disk, DirEntry entry)
 {
+    FSHeader header = {};
+    readHeader(disk, header);
+
     uint8_t *bitmap = readBitmap(disk);
 
     uint64_t startBlock = entry.startBlock;
@@ -186,7 +189,7 @@ void updateBitmap(Disk *disk, DirEntry entry)
     uint64_t endBlock = startBlock + usedBlocks;
 
     for (size_t i = startBlock; i < endBlock; i++)
-        setBlockUsed(bitmap, i, true);
+        setBlockUsed(bitmap, i - header.rootDirOffset - 32, true);
 
     saveBitmapToDisk(disk, bitmap);
 }
