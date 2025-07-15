@@ -19,6 +19,7 @@ Currently, it supports only basic operations:
 - format disk with shell command `format <path>`
 - mounting disk with shell command `mount <diskpath> <mountname>`
 - select mounted disk with shell command `select [disk]`
+- create new file with shell command `mkfile <path> [content]`
 
 To run SimpleFS shell, just run `simplefs` in `build/` directory
 
@@ -34,6 +35,7 @@ Please note that the file system is not fully functional yet and is intended **f
   - [x] `format`
   - [x] `mount`
   - [x] `select`
-  - [ ] `mk`
+  - [x] `mkfile`
+  - [x] `cat`
 - [ ] Support subdirectories
 - [ ] Write/Read file data

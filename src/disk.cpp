@@ -13,13 +13,13 @@ Disk::~Disk()
     closeDisk(); // automatyczne zamykanie pliku
 }
 
-bool Disk::openDisk(uint8_t mode)
+bool Disk::openDisk(unsigned int mode)
 {
 #ifdef _WIN32
     if (mode & OPMD_CREAT)
-        handle = CreateFile(path, mode, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+        handle = CreateFile(path.c_str(), mode, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     else
-        handle = CreateFile(path, mode, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        handle = CreateFile(path.c_str(), mode, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     return handle == INVALID_HANDLE_VALUE;
 #else
     fd = open(path.c_str(), mode, 0644);
@@ -70,7 +70,7 @@ void Disk::flushDisk()
 #endif
 }
 
-size_t Disk::seekDisk(uint64_t offset, uint8_t from)
+void Disk::seekDisk(uint64_t offset, uint8_t from)
 {
 #ifdef _WIN32
     LARGE_INTEGER li;
@@ -88,7 +88,7 @@ size_t Disk::seekDisk(uint64_t offset, uint8_t from)
         break;
     }
 #else
-    return lseek(fd, offset, from);
+    lseek(fd, offset, from);
 #endif
 }
 

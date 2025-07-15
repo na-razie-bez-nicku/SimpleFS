@@ -1,10 +1,10 @@
 #ifndef CREATE
 #define CREATE
 
-#include "disk.hpp"
+#include <fstream>
 #include <iostream>
 
-void create(char *path)
+void create(std::string path)
 {
     // char *file_name;
     // std::cout << "Enter file name (without extension): ";
@@ -16,46 +16,46 @@ void create(char *path)
 
     std::cin >> megabytes;
 
-    Disk disk(path);
+    std::ofstream img(path);
 
-    if (!disk.openDisk(OPMD_CREAT | OPMD_WRONLY))
+    if (img.bad())
     {
         std::cerr << "Failed to open or create file: " << path << std::endl;
         return;
     }
 
-    unsigned char buffer[1048576] = {0x00};
+    char buffer[1048576] = {0x00};
 
     for (size_t i = 0; i < megabytes; i++)
     {
-        disk.writeDisk(buffer, 1048576);
+        img.write(buffer, 1048576);
     }
 
-    disk.closeDisk();
+    img.close();
 }
 
-void create(char *path, uint64_t size)
+void create(std::string path, uint64_t size)
 {
     // char *file_name;
     // std::cout << "Enter file name (without extension): ";
     // std::cin >> file_name;
 
-    Disk disk(path);
+    std::ofstream img(path);
 
-    if (!disk.openDisk(OPMD_CREAT | OPMD_WRONLY))
+    if (img.bad())
     {
         std::cerr << "Failed to open or create file: " << path << std::endl;
         return;
     }
 
-    unsigned char buffer[1048576] = {0x00};
+    char buffer[1048576] = {0x00};
 
     for (size_t i = 0; i < size; i++)
     {
-        disk.writeDisk(buffer, 1048576);
+        img.write(buffer, 1048576);
     }
 
-    disk.closeDisk();
+    img.close();
 }
 
 #endif
