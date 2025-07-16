@@ -30,12 +30,14 @@ Please note that the file system is not fully functional yet and is intended **f
 - [x] Create bitmap allocation system
 - [x] Add root directory
 - [x] Implement file creation
-- [ ] SimpleFS shell
+- [x] SimpleFS shell
   - [x] `create`
   - [x] `format`
   - [x] `mount`
   - [x] `select`
   - [x] `mkfile`
   - [x] `cat`
+  - [ ] `write`
+  - [ ] `rm`
 - [ ] Support subdirectories
 - [ ] Write/Read file data
