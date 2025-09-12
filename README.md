@@ -2,17 +2,6 @@
 
 SimpleFS is a file system which can do basic operations on files.
 
-## ⚠️ Notice – Project is being rewritten
-
-This project is currently being rewritten from scratch and is no longer actively maintained.
-
-The new version will be published soon with:
-- Minimal or no standard library usage
-- Improved modular structure (header/source split)
-- Better compatibility with embedded and OS-level platforms
-
-Stay tuned for updates!
-
 ## ⚠️ WARNING
 
 This file system is **experimental and under development**.
