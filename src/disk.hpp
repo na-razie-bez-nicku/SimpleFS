@@ -53,7 +53,7 @@ public:
 	size_t readDisk(void *buffer, size_t size);
 	size_t writeDisk(const void *buffer, size_t size);
 	void flushDisk();
-	void seekDisk(uint64_t offset, uint8_t from); // 0 - begin; 1 - current; 2 - end (reverse)
+	size_t seekDisk(uint64_t offset, uint8_t from); // 0 - begin; 1 - current; 2 - end (reverse)
 	void closeDisk();
 
 private:

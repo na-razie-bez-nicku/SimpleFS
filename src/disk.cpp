@@ -35,7 +35,7 @@ size_t Disk::readDisk(void *buffer, size_t size)
     if (success)
     {
         return static_cast<size_t>(bytesRead);
-        ; // Return number of bytes read
+        // Return number of bytes read
     }
     else
         return SIZE_MAX; // Error reading file
@@ -52,10 +52,9 @@ size_t Disk::writeDisk(const void *buffer, size_t size)
     if (success)
     {
         return static_cast<size_t>(bytesWritten);
-        ; // Return number of bytes read
     }
     else
-        return SIZE_MAX; // Error reading file
+        return SIZE_MAX; // Error writing file
 #else
     return write(fd, buffer, size);
 #endif
@@ -70,7 +69,7 @@ void Disk::flushDisk()
 #endif
 }
 
-void Disk::seekDisk(uint64_t offset, uint8_t from)
+size_t Disk::seekDisk(uint64_t offset, uint8_t from)
 {
 #ifdef _WIN32
     LARGE_INTEGER li;
@@ -88,8 +87,9 @@ void Disk::seekDisk(uint64_t offset, uint8_t from)
         break;
     }
 #else
-    lseek(fd, offset, from);
+    return lseek(fd, offset, from);
 #endif
+    return -1;
 }
 
 void Disk::closeDisk()

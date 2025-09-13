@@ -184,12 +184,12 @@ void updateBitmap(Disk *disk, DirEntry entry)
 
     uint8_t *bitmap = readBitmap(disk);
 
-    uint64_t startBlock = entry.startBlock;
+    // uint64_t startBlock = entry.startBlock;
     uint64_t usedBlocks = (entry.sizeBytes + 511) / 512;
-    uint64_t endBlock = startBlock + usedBlocks;
+    // uint64_t endBlock = startBlock + usedBlocks;
 
-    for (size_t i = startBlock; i < endBlock; i++)
-        setBlockUsed(bitmap, i - header.rootDirOffset - 32, true);
+    // for (size_t i = startBlock; i < endBlock; i++)
+        // setBlockUsed(bitmap, i - header.rootDirOffset - 32, true);
 
     saveBitmapToDisk(disk, bitmap);
 }
@@ -217,7 +217,7 @@ void createFile(Disk *disk, const char *filePath, const char *content)
             continue;
         }
 
-        disk->seekDisk(entry.startBlock * 512, UNISEEK_BEG);
+        // disk->seekDisk(entry.startBlock * 512, UNISEEK_BEG);
 
         disk->writeDisk(content, entry.sizeBytes);
         created = true;

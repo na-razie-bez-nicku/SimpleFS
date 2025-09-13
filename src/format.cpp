@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "fs_header.cpp"
 #include "disk.hpp"
+#include "io.cpp"
 #include "methods.cpp"
 
 unsigned int calculateBitmapBlocks(uint64_t totalSizeBytes, uint32_t blockSize, uint32_t systemBlocksWithoutBitmap)
@@ -68,6 +69,8 @@ int format(Disk *disk)
     header.bitmapSizeBytes = bitmapSizeBytes2;
     header.end[0] = 0x55;
     header.end[1] = 0xAA;
+
+    printHeader(header);
 
     // 512 bytes buffer (boot sector)
     uint8_t bootSector[512] = {0x00};
